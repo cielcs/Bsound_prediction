@@ -1,6 +1,7 @@
 import os
 import librosa
 import numpy as np
+from scipy.stats import multivariate_normal
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 from datetime import datetime, timedelta
@@ -8,6 +9,7 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import matplotlib.colors as mcolors
+from matplotlib.patches import Ellipse
 
 np.set_printoptions(threshold=np.inf)
 
@@ -112,5 +114,54 @@ axs[1].set_ylabel('Principal Component 2')
 axs[1].set_title('PCA of Non-standardized MFCC Features')
 axs[1].grid(True)
 fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap), ax=axs[1], label='Minutes Difference')
+
+
+# グループ化と分布の計算
+interval = 60  # 分
+grouped_data = {}
+group_distributions = {}  # 各グループの正規分布を格納する辞書
+
+for i, (label, minutes_difference) in enumerate(file_infos):
+    if minutes_difference is not None:
+        group_key = (minutes_difference // interval) * interval + interval // 2
+        if group_key not in grouped_data:
+            grouped_data[group_key] = []
+        grouped_data[group_key].append(mfcc_pca_normalized[i])
+
+# 楕円をプロットする際に、特定のサブプロットに対して add_patch を呼び出す必要があります。
+for group_key, data_points in grouped_data.items():
+    if len(data_points) > 1:
+        data_points = np.array(data_points)
+        mean_group = np.mean(data_points, axis=0)
+        cov_group = np.cov(data_points, rowvar=False)
+        
+        # 正規分布のパラメータを格納
+        group_distributions[group_key] = {
+            'mean': mean_group,
+            'cov': cov_group,
+            'distribution': multivariate_normal(mean=mean_group, cov=cov_group)
+        }
+        
+        # 共分散行列から楕円の主軸の長さと角度を計算
+        eigvals, eigvecs = np.linalg.eigh(cov_group)
+        order = eigvals.argsort()[::-1]
+        eigvals, eigvecs = eigvals[order], eigvecs[:, order]
+        angle = np.degrees(np.arctan2(*eigvecs[:, 0][::-1]))
+
+        # 標準偏差1倍の範囲の楕円をプロット
+        ell_radius_x = np.sqrt(eigvals[0])
+        ell_radius_y = np.sqrt(eigvals[1])
+        ellipse = Ellipse(
+            mean_group,
+            width=ell_radius_x * 2,
+            height=ell_radius_y * 2,
+            angle=angle,
+            edgecolor=cmap(norm(group_key)),
+            fc='None',
+            lw=2,
+            label=f'{group_key} min group'
+        )
+        # ここで、特定のサブプロットに楕円を追加します。
+        axs[0].add_patch(ellipse)  # axs[1] にも同じように楕円を追加したい場合は、axs[1] を使用します。
 
 plt.show()
