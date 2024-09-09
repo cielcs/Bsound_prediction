@@ -2,6 +2,7 @@ import librosa
 import numpy as np
 import pickle
 import math
+import matplotlib.pyplot as plt
 
 def extract_mfcc_features(audio_path, n_mfcc=13):
     y, sr = librosa.load(audio_path, sr=None)
@@ -11,7 +12,7 @@ def extract_mfcc_features(audio_path, n_mfcc=13):
     return np.concatenate((mfcc_mean, mfcc_std))
 
 # 新しい音声ファイルのパス
-new_audio_path = 'Bsound/5_29_1447.wav'
+new_audio_path = 'Bsound/9_7_0058.wav'
 
 # オブジェクトをロード
 with open('saved_objects/scaler.pkl', 'rb') as f:
@@ -59,3 +60,26 @@ print("First prior:", first_prior)
 print("Marginal likelihood:", Marginal_likelihood)
 print("Posterior:", Posterior)
 # print(sorted_group_distributions.keys())
+
+
+# データの準備
+keys = list(likelihoods2.keys())
+likelihoods = [likelihoods2[key] for key in keys]
+priors = [first_prior[key] for key in keys]
+posteriors = [Posterior[key] for key in keys]
+
+# グラフの作成
+plt.figure(figsize=(10, 6))
+
+plt.plot(keys, likelihoods, label='Likelihoods', marker='o')
+plt.plot(keys, priors, label='Priors', marker='o')
+plt.plot(keys, posteriors, label='Posteriors', marker='o')
+
+plt.xlabel('Key')
+plt.ylabel('Value')
+plt.title('Likelihoods, Priors, and Posteriors by Key')
+plt.legend()
+
+plt.grid(True)
+plt.show()
+
