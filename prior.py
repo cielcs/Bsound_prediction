@@ -77,7 +77,7 @@ def process_directory(directory, specified_times):
     return np.array(mfcc_features_list), labels, colors, norm, cmap, file_infos
 
 # ディレクトリのパス
-directory = 'Bsound'
+directory = 'Bsound1'
 specified_times = ['5_29_1710', '5_29_2235','5_30_1337','5_30_1359','5_31_2144','6_1_1806','6_2_1505',
 '6_4_1500','6_5_1842','6_7_1602','6_21_1905','6_23_0132','7_3_1833','7_4_1049','7_5_0306','7_10_1859','7_15_2219','8_11_1258','8_12_1510','9_5_0336','9_7_0125']
 # MFCCを抽出
@@ -116,15 +116,31 @@ fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap), ax=axs[0], label='Minutes 
 # axs[1].grid(True)
 # fig.colorbar(cm.ScalarMappable(norm=norm, cmap=cmap), ax=axs[1], label='Minutes Difference')
 
+################################################################################
+# #60分間隔
+# # グループ化と分布の計算
+# interval = 60  # 分
+# grouped_data = {}
+# group_distributions = {}  # 各グループの正規分布を格納する辞書
 
-# グループ化と分布の計算
+# for i, (label, minutes_difference) in enumerate(file_infos):
+#     if minutes_difference is not None:
+#         group_key = (minutes_difference // interval) * interval + interval // 2
+#         if group_key not in grouped_data:
+#             grouped_data[group_key] = []
+#         grouped_data[group_key].append(mfcc_features_normalized[i]) #mfcc_pca_normalized←本当の引数
+
+        # グループ化と分布の計算
 interval = 60  # 分
 grouped_data = {}
 group_distributions = {}  # 各グループの正規分布を格納する辞書
 
 for i, (label, minutes_difference) in enumerate(file_infos):
     if minutes_difference is not None:
-        group_key = (minutes_difference // interval) * interval + interval // 2
+        if minutes_difference<=150:
+            group_key = 0
+        else:
+            group_key=1
         if group_key not in grouped_data:
             grouped_data[group_key] = []
         grouped_data[group_key].append(mfcc_features_normalized[i]) #mfcc_pca_normalized←本当の引数
